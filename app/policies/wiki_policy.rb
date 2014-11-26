@@ -1,14 +1,15 @@
 class WikiPolicy < ApplicationPolicy
 attr_reader :user, :record
-
-class WikiPolicy < ApplicationPolicy
   
   class Scope < Struct.new(:user, :scope)
     def resolve
       if user.admin?
         scope.all
       else
-        scope.where(user: user)
+        scope.joins(:collaborations).where(
+          "private = :private or user_id = :user_id or collaborations.collaborator_id :collaborator_id",
+          { private: false, user_id: user.id, collaborator_id: collaborator.id }
+        ) 
       end
     end
   end
@@ -37,13 +38,12 @@ class WikiPolicy < ApplicationPolicy
   end
  
   def show?
-    wiki.private? ? update? : true
+    wiki.private ? update? : true
   end
  
   def destroy?
     update?
   end
-end
 end
  
 
